@@ -378,9 +378,9 @@ void execute(const string& file) {
 char* init_path() {
 	int bufsize;
 	char buffer[bufsize];
-	struct passwd pwd, *result = NULL;
-	if (getpwuid_r(getuid(), &pwd, buffer, bufsize, &result) != 0 || !result)
+	struct passwd *pwd;
+	if ((pwd=getpwuid(getuid()))==NULL)
 		abort();
-	my_chdir(pwd.pw_dir);	            //Get the home directory of the logged in user, and change directory to it.
-    return pwd.pw_dir;
+	my_chdir(pwd->pw_dir);	            //Get the home directory of the logged in user, and change directory to it.
+    return pwd->pw_dir;
 }
