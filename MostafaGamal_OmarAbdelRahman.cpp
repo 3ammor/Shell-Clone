@@ -405,7 +405,6 @@ void execute(const string& file) {
 		string s;
 		while(ss>>s);
 		if(s=="&") {
-            printf("%i\n",pid);
 			int stats; pid = waitpid(pid,&stats,WNOHANG);               //Do not wait for the child to finish.
 		} else {
 			int stats; pid = waitpid(pid,&stats,0);                     //Wait for the child to finish.
