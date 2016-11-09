@@ -45,6 +45,8 @@ void execute(const string& file);                            //Function that exe
 char* init_path();                                           //Function that initializes the current working directory to the home directory.
 int stricmp(const char* a, const char* b);                   //Function for sorting alphabetically ignoring character casing.
 bool compare(const char *c1, const char *c2);                //Compare function in used in sorting directories and files alphabetically.
+void process_tilde(string& input);                           //Processing tilde in cd as current home directory.
+bool replace(string& str, const string& from, const string& to);                 //Replaces a substring by another substring.
 
 int main()
 {
@@ -117,6 +119,26 @@ struct termios control_kb_buffer(bool disable,struct termios* my_old) {
 	}
 }
 
+bool replace(string& str, const string& from, const string& to) {
+    size_t start_pos = 0;
+    if(str[start_pos]!='~')
+        return false;
+    str.replace(start_pos, from.length(), to);
+    return true;
+}
+
+void process_tilde(string& input)
+{
+    int bufsize;
+	char buffer[bufsize];
+	struct passwd *pwd;
+	if ((pwd=getpwuid(getuid()))!=NULL)
+    {
+        string home = pwd->pw_dir;	            //Get the home directory of the logged in user.
+        replace(input,"~",home);
+    }
+}
+
 void my_chdir(char* input) {
     int ret = chdir(input);
     if(ret == -1)
@@ -128,6 +150,7 @@ void my_chdir(char* input) {
 
 char* my_cd() {
 	string inp; ss>>inp;
+    process_tilde(inp);
     char* input = (char*) inp.c_str();
     my_chdir(input);
     return get_current_dir_name();              //return the current directory name after finishing.
@@ -358,7 +381,11 @@ void execute(const string& file) {
 		vector<string> args; 
 		while(ss>>s)
 			args.push_back(s);
-		if((int)args.size()>0 && args[(int)args.size()-1] == "&") args.pop_back();
+        if((int)args.size()>0 && args[(int)args.size()-1] == "&")
+        {   
+            int pgrpid = setpgrp();                                         //If it will run in the background, then it will become the leader of its process group
+            args.pop_back();
+        }
 		int Size = (int) args.size()+2;
 		argv = new char* [Size];
 		argv[0] = op; 
@@ -378,6 +405,7 @@ void execute(const string& file) {
 		string s;
 		while(ss>>s);
 		if(s=="&") {
+            printf("%i\n",pid);
 			int stats; pid = waitpid(pid,&stats,WNOHANG);               //Do not wait for the child to finish.
 		} else {
 			int stats; pid = waitpid(pid,&stats,0);                     //Wait for the child to finish.
